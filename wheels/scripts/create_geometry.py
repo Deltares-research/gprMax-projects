@@ -1,16 +1,18 @@
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from shared.geometry_tools import ensure_directory
+
 GEOMETRY_DIR = ROOT / "wheels" / "geometries"
 OUTPUT_DIR = ROOT / "wheels" / "outputs"
 FIGURE_DIR = ROOT / "wheels" / "figures"
 GEOMETRY_FILE = GEOMETRY_DIR / "wheels_geometry.txt"
 
 GEOMETRY_TEMPLATE = """Wheels geometry placeholder\n===========================\n\nReplace this file with generated geometry content for the wheels study.\n"""
-
-
-def ensure_directory(path: Path) -> None:
-    path.mkdir(parents=True, exist_ok=True)
 
 
 def main() -> None:

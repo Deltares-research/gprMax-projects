@@ -25,6 +25,7 @@ pip = "*"
 [tool.pixi.pypi-dependencies]
 tqdm = "*"
 terminaltables = "*"
+# The upstream gprMax repository is expected to be cloned as a sibling checkout.
 gprmax = { path = "../gprMax", editable = true }
 
 [tool.pixi.tasks]
