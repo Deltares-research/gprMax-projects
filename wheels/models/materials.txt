@@ -1,0 +1,7 @@
+## gprMax material file for wheels/models/wheels.in
+## IMPORTANT: eps_r, conductivity, mu_r, magnetic_loss are placeholders. Edit before scientific use.
+## The order must match wheel_geometry.h5 /data integer IDs: 0, 1, 2, 3.
+#material: 1.0 0.0 1.0 0.0 pale_yellow_top
+#material: 1.0 0.0 1.0 0.0 light_blue
+#material: 1.0 0.0 1.0 0.0 brown
+#material: 1.0 0.0 1.0 0.0 grey_green

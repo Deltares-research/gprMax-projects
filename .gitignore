@@ -7,3 +7,5 @@ wheels/outputs/*
 !wheels/outputs/.gitkeep
 wheels/figures/*
 !wheels/figures/.gitkeep
+wheels/models/*.out
+wheels/models/*.vti

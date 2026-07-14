@@ -8,7 +8,7 @@ requires-python = ">=3.11,<3.14"
 [tool.pixi.workspace]
 channels = ["conda-forge"]
 name = "gprmax-projects"
-platforms = ["win-64", "linux-64"]
+platforms = ["win-64"]
 
 [tool.pixi.dependencies]
 python = ">=3.11,<3.14"
@@ -16,24 +16,26 @@ numpy = "*"
 scipy = "*"
 matplotlib = "*"
 h5py = "*"
+netcdf4 = "*"
+pandas = "*"
+pillow = "*"
 jupyterlab = "*"
 cython = "*"
 psutil = "*"
+mpi4py = "*"
 colorama = "*"
 pip = "*"
 
 [tool.pixi.pypi-dependencies]
+# The upstream gprMax repository is expected to be cloned as a sibling checkout.
+# Note: gprMax requires numpy/cython for building; these are in conda dependencies above.
+gprmax = { path = "../gprMax", editable = true }
 tqdm = "*"
 terminaltables = "*"
-# The upstream gprMax repository is expected to be cloned as a sibling checkout.
-# Update this path if your local gprMax clone lives somewhere else.
-gprmax = { path = "../gprMax", editable = true }
+setuptools = "*"  # Ensure setuptools is available for building
 
 [tool.pixi.tasks]
-build = { cmd = "python -m pip wheel --no-deps --wheel-dir ./.pixi/dist ../gprMax" }
-install = { cmd = "python -m pip install --no-deps --editable ../gprMax" }
-setup = { depends-on = ["build", "install"] }
-wheels_geom = { cmd = "python wheels/scripts/create_geometry.py" }
-wheels_run = { cmd = "python -m gprMax wheels/models/wheels.in" }
-wheels = { depends-on = ["wheels_geom", "wheels_run"] }
-shell = { cmd = "pixi shell" }
+wheels = { cmd = "python scripts/gpr_batch.py wheels/models/wheels.in" }
+convert = { cmd = "python scripts/outputfile_converter.py" }
+plot = { cmd = "python -m tools.plot_Bscan" }
+

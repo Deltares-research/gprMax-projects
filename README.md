@@ -5,7 +5,7 @@
 ## Repository split
 
 - The upstream `gprMax` source code lives in a separate repository at `../gprMax`
-- This repository contains only modelling projects, shared utilities, and project templates
+- This repository contains modelling projects and shared runner scripts
 - Keeping the repositories separate means the upstream `gprMax` checkout stays clean and can be updated with `git pull`
 
 ## Shared Pixi environment
@@ -15,7 +15,6 @@ The Pixi configuration is embedded directly in `pyproject.toml`; there is no sep
 
 The workspace is configured for:
 
-- `linux-64`
 - `win-64`
 
 and uses the `conda-forge` channel.
@@ -34,10 +33,13 @@ It includes folders for models, generated geometries, scripts, outputs, and figu
 
 Common tasks are defined in `pyproject.toml`:
 
-- `pixi run build` - build the sibling `../gprMax` source into a wheel
-- `pixi run install` - install `../gprMax` in editable mode
-- `pixi run setup` - run both the build and install tasks
-- `pixi run wheels_geom` - generate the wheels geometry scaffold
-- `pixi run wheels_run` - run the wheels model with `python -m gprMax`
-- `pixi run wheels` - generate geometry and then run the wheels model
-- `pixi run shell` - open a Pixi shell
+- `pixi run wheels` - run one scan, merge outputs, remove per-scan files
+- `pixi run wheels -- 49` - run 49 scans with MPI (`jobs = 50`), merge outputs, remove per-scan files
+- `pixi run wheels -- geometry` - geometry-only run
+- `pixi run convert -- any/path/to/file.out --format dt1` - export Ex/Ey/Ez to DT1/HD
+- `pixi run plot -- any/path/to/file.out Ez` - plot B-scan for a field component (`Ex`, `Ey`, `Ez`, `Hx`, `Hy`, `Hz`)
+
+Notes:
+
+- Keep `--` after task names when passing arguments.
+- For plotting, use a field component (for example `Ez`), not `--format dt1`.
