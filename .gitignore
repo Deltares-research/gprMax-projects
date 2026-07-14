@@ -1,0 +1,9 @@
+.pixi/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+
+wheels/outputs/*
+!wheels/outputs/.gitkeep
+wheels/figures/*
+!wheels/figures/.gitkeep
