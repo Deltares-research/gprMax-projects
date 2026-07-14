@@ -12,7 +12,12 @@ OUTPUT_DIR = ROOT / "wheels" / "outputs"
 FIGURE_DIR = ROOT / "wheels" / "figures"
 GEOMETRY_FILE = GEOMETRY_DIR / "wheels_geometry.txt"
 
-GEOMETRY_TEMPLATE = """Wheels geometry placeholder\n===========================\n\nReplace this file with generated geometry content for the wheels study.\n"""
+GEOMETRY_TEMPLATE = """\
+Wheels geometry placeholder
+===========================
+
+Replace this file with generated geometry content for the wheels study.
+"""
 
 
 def main() -> None:

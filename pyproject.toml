@@ -26,6 +26,7 @@ pip = "*"
 tqdm = "*"
 terminaltables = "*"
 # The upstream gprMax repository is expected to be cloned as a sibling checkout.
+# Update this path if your local gprMax clone lives somewhere else.
 gprmax = { path = "../gprMax", editable = true }
 
 [tool.pixi.tasks]
