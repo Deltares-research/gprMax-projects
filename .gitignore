@@ -9,5 +9,6 @@ wheels/figures/*
 !wheels/figures/.gitkeep
 wheels/models/*.out
 wheels/models/*.vti
+wheels/models/_chain_temp_*.in
 
 my_*

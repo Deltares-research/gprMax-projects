@@ -36,6 +36,7 @@ setuptools = "*"  # Ensure setuptools is available for building
 
 [tool.pixi.tasks]
 wheels = { cmd = "python scripts/gpr_batch.py wheels/models/wheels.in" }
+wheels-chain = { cmd = "python scripts/gpr_chain.py" }
 convert = { cmd = "python scripts/outputfile_converter.py" }
 plot = { cmd = "python -m tools.plot_Bscan" }
 
