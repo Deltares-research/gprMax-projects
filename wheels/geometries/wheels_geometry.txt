@@ -1,4 +1,0 @@
-Wheels geometry placeholder
-===========================
-
-Replace this file with generated geometry content for the wheels study.

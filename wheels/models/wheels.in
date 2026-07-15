@@ -1,23 +1,23 @@
 #title: wheels
-#dx_dy_dz: 0.1 0.1 0.1
-#time_window: 2.0e-7
+#dx_dy_dz: 0.02 0.02 0.02
+#time_window: 2.5e-7
 
 ##geometry HDF5 is relative to this input file directory: wheels/models/
-#geometry_objects_read: 0 0 0 ../geometries/wheel_geometry.h5 materials.txt
-
+#geometry_objects_read: 0 0 0 ../geometries/wheel_geometry.h5 base_sand_material_017.txt
 ##source parameters, 250 and 100 mHz ricker
-#waveform: ricker 1 0.25e9 my_ricker
-#hertzian_dipole: z 1 4 0 my_ricker
+#waveform: ricker 1 100e6 my_ricker
+#hertzian_dipole: z 1 0.1 0 my_ricker
 
-##receiver parameters
-#rx: 1.5 4 0
-##tx-rx distance is 50 cm
+##receiver parameters - 0.3 m from ricker source
+#rx: 1.3 0.1 0
 #src_steps: 0.1 0 0
 #rx_steps: 0.1 0 0
 
+##for end ricker at 199, this is 1980 steps
+
 #python:
 from gprMax.input_cmd_funcs import *
-domain = domain(200.0, 10.0, 0.1)
+domain = domain(200.0, 10.0, 0.02)
 wave_field = False
 
 #Record snapshots:

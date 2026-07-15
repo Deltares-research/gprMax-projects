@@ -9,3 +9,5 @@ wheels/figures/*
 !wheels/figures/.gitkeep
 wheels/models/*.out
 wheels/models/*.vti
+
+my_*

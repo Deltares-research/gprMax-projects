@@ -17,12 +17,10 @@ from PIL import Image
 import numpy as np
 from netCDF4 import Dataset
 from scipy.ndimage import median_filter
-import pandas as pd
 
 repo = Path(__file__).resolve().parents[2]
 src_img = repo / "wheels" / "data" / "traced_section_boundaries_flat_surface_v2.png"
 out_h5 = repo / "wheels" / "geometries" / "wheel_geometry.h5"
-out_csv = repo / "wheels" / "geometries" / "wheel_material_id_mapping.csv"
 out_mat = repo / "wheels" / "models" / "materials.txt"
 
 img = Image.open(src_img).convert("RGB")
@@ -87,13 +85,6 @@ root.setncattr("physical_extent_depth_m", np.array([zmin, zmax], dtype="f8"))
 root.setncattr("note", "2D x-depth section; depth stored as gprMax y dimension; z is one invariant cell.")
 root.close()
 
-pd.DataFrame({
-    "material_id_in_h5": range(len(mat_names)),
-    "material_name_in_materials_txt": mat_names,
-    "rgb_from_source_png": [",".join(map(str, map(int, c))) for c in palette],
-    "note": ["physical properties not assigned"]*len(mat_names),
-}).to_csv(out_csv, index=False)
-
 with open(out_mat, "w") as f:
     f.write("## gprMax material file for wheels/models/wheels.in\n")
     f.write("## IMPORTANT: eps_r, conductivity, mu_r, magnetic_loss are placeholders. Edit before scientific use.\n")
@@ -102,5 +93,4 @@ with open(out_mat, "w") as f:
         f.write("#material: 1.0 0.0 1.0 0.0 " + name + "\n")
 
 print(f"Wrote {out_h5}")
-print(f"Wrote {out_csv}")
 print(f"Wrote {out_mat}")
