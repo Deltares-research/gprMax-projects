@@ -4,7 +4,8 @@ This folder contains the first `gprmax-projects` model setup for the Dutch `wiel
 
 ## Folder roles
 
-- `models/` contains the gprMax `.in` file and material file.
+- `models/` contains the gprMax `.in` templates and run config files.
+- `materials/` contains material definition files and material index tables.
 - `geometries/` contains generated HDF5 geometry and material-ID mapping files.
 - `scripts/` contains Python scripts used to regenerate geometry or process results.
 - `data/` contains source interpretation inputs, such as the traced PNG.
@@ -13,20 +14,18 @@ This folder contains the first `gprmax-projects` model setup for the Dutch `wiel
 
 ## Current generated files
 
-- `models/wheels.in`
-- `models/materials.txt`
+- `models/wheels-chain.in`
+- `materials/materials.txt`
 - `geometries/wheel_geometry.h5`
 - `geometries/wheel_material_id_mapping.csv`
 - `figures/wheel_geometry_preview.png`
 - `data/traced_section_boundaries_flat_surface_v2.png`
 
-The values in `models/materials.txt` are placeholders. Edit the electromagnetic properties before running a scientific simulation.
+The values in `materials/materials.txt` are placeholders. Edit the electromagnetic properties before running a scientific simulation.
 
 ## Runs
 
 - `pixi run wheels`
-- `pixi run wheels -- 49`
-- `pixi run wheels -- geometry`
 
 ## View outputs
 

@@ -1,8 +1,0 @@
-## gprMax material file for wheels/models/wheels_watertable.in
-## IMPORTANT: eps_r, conductivity, mu_r, magnetic_loss are placeholders. Edit before scientific use.
-## The order must match wheels_watertable_geometry.h5 /data integer IDs: 0, 1, 2, 3, 4.
-#material: 1.0 0.0 1.0 0.0 sand_saturated
-#material: 1.0 0.0 1.0 0.0 yellow_dry
-#material: 1.0 0.0 1.0 0.0 light_blue
-#material: 1.0 0.0 1.0 0.0 brown
-#material: 1.0 0.0 1.0 0.0 grey_green

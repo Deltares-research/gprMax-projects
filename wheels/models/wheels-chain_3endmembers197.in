@@ -1,0 +1,33 @@
+#title: wheels_{MATERIAL_BASE}
+#dx_dy_dz: 0.02 0.02 0.02
+#time_window: 3.0e-7
+
+##geometry HDF5 is relative to this input file directory: wheels/models/
+#geometry_objects_read: 0 1.0 0 {GEOMETRY_FILE} {MATERIAL_FILE}
+##source parameters, 250 and 100 mHz ricker
+#waveform: ricker 1 100e6 my_ricker
+#hertzian_dipole: z 1 1.0 0 my_ricker
+
+##receiver parameters - 0.3 m from ricker source
+#rx: 2.0 1.0 0
+#src_steps: 1 0 0
+#rx_steps: 1 0 0
+
+##max steps is (end ricker - start ricker)/step_length = (198 - 1)/1 = 197
+
+#python:
+from gprMax.input_cmd_funcs import *
+domain = domain(200.0, 11.0, 0.02)
+wave_field = False
+
+#Record snapshots:
+if wave_field == True:
+   dt_snap = 2 #nanoseconds
+
+   for i in range(1, 25):
+      print('#snapshot: 0 0 0 50 6.0 0.01 0.01 0.01 0.01 {} snapshot{}'.format((i*dt_snap)*1e-9, i))
+
+#end_python:
+
+##save the geometry to a vtk file
+geometry_view: 0 0 0 50 6.0 0.01 0.01 0.01 geom n

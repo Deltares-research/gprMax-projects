@@ -21,7 +21,7 @@ from scipy.ndimage import median_filter
 repo = Path(__file__).resolve().parents[2]
 src_img = repo / "wheels" / "data" / "traced_section_boundaries_flat_surface_v2.png"
 out_h5 = repo / "wheels" / "geometries" / "wheel_geometry.h5"
-out_mat = repo / "wheels" / "models" / "materials.txt"
+out_mat = repo / "wheels" / "materials" / "materials.txt"
 
 img = Image.open(src_img).convert("RGB")
 arr = np.array(img)
@@ -86,7 +86,7 @@ root.setncattr("note", "2D x-depth section; depth stored as gprMax y dimension; 
 root.close()
 
 with open(out_mat, "w") as f:
-    f.write("## gprMax material file for wheels/models/wheels.in\n")
+    f.write("## gprMax material file for wheels/models/wheels-chain.in\n")
     f.write("## IMPORTANT: eps_r, conductivity, mu_r, magnetic_loss are placeholders. Edit before scientific use.\n")
     f.write("## The order must match wheel_geometry.h5 /data integer IDs: 0, 1, 2, 3.\n")
     for name in mat_names:

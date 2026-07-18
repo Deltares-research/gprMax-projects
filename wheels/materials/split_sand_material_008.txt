@@ -1,0 +1,21 @@
+Split-sand base detectability material set 008
+Case label: clay1_high
+Design: one_factor_walcheren_clay
+Order is fixed by HDF5 /data integer IDs: 0, 1, 2, 3, 4.
+Format: #material: epsilon_r sigma_S_per_m mu_r magnetic_loss material_name
+Non-# lines are comments and ignored by gprMax.
+
+ID 0: zand_boven_onverzadigd_deels_verzadigd -- vochtig_deels_verzadigd_centraal
+#material: 14 0.01 1 0 zand_boven_onverzadigd_deels_verzadigd
+
+ID 1: zand_onder_verzadigd_fijn_sterk_siltig -- verzadigd_zand_centraal
+#material: 28 0.03 1 0 zand_onder_verzadigd_fijn_sterk_siltig
+
+ID 2: klei_zwak_tot_sterk_zandig -- verzadigde_zandige_klei_hoger_contrast_hoger_verlies
+#material: 40 0.35 1 0 klei_zwak_tot_sterk_zandig
+
+ID 3: veen_plaatselijk_kleiig -- verzadigd_kleiig_veen_centraal
+#material: 65 0.15 1 0 veen_plaatselijk_kleiig
+
+ID 4: klei_zwak_tot_sterk_zandig_en_siltig -- verzadigde_zandige_siltige_klei_centraal
+#material: 35 0.25 1 0 klei_zwak_tot_sterk_zandig_en_siltig

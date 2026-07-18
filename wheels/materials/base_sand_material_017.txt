@@ -1,0 +1,17 @@
+Base-of-sand detectability material set 017
+CENTRE CASE.
+Order is fixed by HDF5 /data integer IDs: 0, 1, 2, 3.
+Format: #material: epsilon_r sigma_S_per_m mu_r magnetic_loss material_name
+Non-# lines are comments and ignored by gprMax.
+
+ID 0: zand_fijn_sterk_siltig -- central_moist_to_wet_silty_fine_sand
+#material: 18 0.03 1 0 zand_fijn_sterk_siltig
+
+ID 1: klei_zwak_tot_sterk_zandig -- central_saturated_sandy_clay
+#material: 30 0.15 1 0 klei_zwak_tot_sterk_zandig
+
+ID 2: veen_plaatselijk_kleiig -- central_saturated_clayey_peat
+#material: 65 0.15 1 0 veen_plaatselijk_kleiig
+
+ID 3: klei_zwak_tot_sterk_zandig_en_siltig -- central_saturated_sandy_silty_clay
+#material: 35 0.25 1 0 klei_zwak_tot_sterk_zandig_en_siltig

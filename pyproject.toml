@@ -25,6 +25,8 @@ psutil = "*"
 mpi4py = "*"
 colorama = "*"
 pip = "*"
+scikit-image = ">=0.26.0,<0.27"
+pycuda = ">=2025.1.2,<2026"
 
 [tool.pixi.pypi-dependencies]
 # The upstream gprMax repository is expected to be cloned as a sibling checkout.
@@ -35,8 +37,7 @@ terminaltables = "*"
 setuptools = "*"  # Ensure setuptools is available for building
 
 [tool.pixi.tasks]
-wheels = { cmd = "python scripts/gpr_batch.py wheels/models/wheels.in" }
-wheels-chain = { cmd = "python scripts/gpr_chain.py" }
+wheels = { cmd = "python scripts/gpr_chain.py --run-config wheels/models/run_config.toml" }
 convert = { cmd = "python scripts/outputfile_converter.py" }
 plot = { cmd = "python -m tools.plot_Bscan" }
 

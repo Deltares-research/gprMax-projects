@@ -13,7 +13,7 @@ from scipy.interpolate import PchipInterpolator
 DEFAULT_CENTRE_FREQ_MHZ = 250.0
 DEFAULT_ANT_SEP_M = 0.5
 DEFAULT_TRACE_INTERVAL_M = 0.1
-DEFAULT_RESAMPLE_SAMPLES = 1024
+DEFAULT_RESAMPLE_SAMPLES = None  # None = no resampling, keep original samples
 
 
 def parse_args() -> argparse.Namespace:
@@ -31,7 +31,10 @@ def read_data(input_file: Path, component: str, transpose: bool) -> tuple[np.nda
 
     with h5py.File(input_file, "r") as f:
         if dataset_path not in f:
-            raise KeyError(f"Dataset not found: {dataset_path}")
+            # Check if file is essentially empty
+            if len(f.keys()) == 0:
+                raise ValueError(f"File {input_file.name} is empty or corrupted (no datasets found)")
+            raise KeyError(f"Dataset not found: {dataset_path}. Available groups: {list(f.keys())}")
         data = np.asarray(f[dataset_path], dtype=np.float64)
         dt_s = float(f.attrs["dt"])
 
@@ -46,7 +49,9 @@ def read_data(input_file: Path, component: str, transpose: bool) -> tuple[np.nda
     return data, dt_s
 
 
-def resample_data(data: np.ndarray, target_samples: int) -> np.ndarray:
+def resample_data(data: np.ndarray, target_samples: int | None) -> np.ndarray:
+    if target_samples is None:
+        return data
     if target_samples <= 0:
         raise ValueError("resample-samples must be > 0")
     n_samples = data.shape[0]
@@ -261,21 +266,23 @@ def write_dt1_hd(base: Path, data_i16: np.ndarray, hdr: dict[str, float | int | 
     ]
     hd_path.write_text("\r\n".join(hd_lines) + "\r\n", encoding="ascii")
 
+    samp_int = float(hdr["samp_int"])
+    
     with open(dt1_path, "wb") as f:
         for i in range(n_traces):
             pos = i * trac_int
             header = bytearray()
-            header.extend(struct.pack("<f", float(i + 1)))
-            header.extend(struct.pack("<f", float(pos)))
-            header.extend(struct.pack("<f", float(n_samples)))
-            header.extend(struct.pack("<f", 0.0))
-            header.extend(struct.pack("<f", 0.0))
-            header.extend(struct.pack("<f", 2.0))
-            header.extend(struct.pack("<f", float(time_window)))
-            header.extend(struct.pack("<f", 1.0))
-            header.extend(struct.pack("<d", 0.0))
-            header.extend(struct.pack("<d", 0.0))
-            header.extend(struct.pack("<d", 0.0))
+            header.extend(struct.pack("<f", float(i + 1)))           # Trace number
+            header.extend(struct.pack("<f", float(pos)))             # Position
+            header.extend(struct.pack("<f", float(n_samples)))       # Number of samples
+            header.extend(struct.pack("<f", 0.0))                    # Time zero
+            header.extend(struct.pack("<f", samp_int))               # Sample interval (ns)
+            header.extend(struct.pack("<f", 2.0))                    # Gains applied
+            header.extend(struct.pack("<f", float(time_window)))     # Time window
+            header.extend(struct.pack("<f", 1.0))                    # Number of stacks
+            header.extend(struct.pack("<d", 0.0))                    # Position 1 (x)
+            header.extend(struct.pack("<d", float(pos)))             # Position 2 (y)
+            header.extend(struct.pack("<d", 0.0))                    # Position 3 (z)
             header.extend(struct.pack("<f", 0.0))
             header.extend(struct.pack("<f", 0.0))
             header.extend(struct.pack("<f", 0.0))
@@ -348,18 +355,51 @@ def write_iprb_iprh(base: Path, data_i16: np.ndarray, hdr: dict[str, float | int
         f.write(np.asfortranarray(data_i16).tobytes(order="F"))
 
 
+def get_available_components(input_file: Path) -> list[str]:
+    """Discover which field components are available in the HDF5 file."""
+    available = []
+    try:
+        with h5py.File(input_file, "r") as f:
+            if "/rxs/rx1" in f:
+                rx1_group = f["/rxs/rx1"]
+                for component in ("Ex", "Ey", "Ez", "Hx", "Hy", "Hz"):
+                    if component in rx1_group:
+                        available.append(component)
+    except Exception:
+        pass
+    return available
+
+
 def main() -> None:
     args = parse_args()
 
-    for component in ("Ex", "Ey", "Ez"):
-        data, dt_s = read_data(args.input_file, component, transpose=True)
+    # Discover available components
+    available_components = get_available_components(args.input_file)
+    if not available_components:
+        print("Error: No field components found in file", file=__import__("sys").stderr)
+        return
+
+    fmt = args.fmt.lower()
+    
+    for component in available_components:
+        try:
+            # DT1 format needs original orientation (n_samples, n_traces), others need transpose
+            transpose = (fmt != "dt1")
+            data, dt_s = read_data(args.input_file, component, transpose=transpose)
+        except ValueError as e:
+            print(f"Error: {e}", file=__import__("sys").stderr)
+            return
+        except KeyError as e:
+            print(f"Warning: Skipping {component} - {e}", file=__import__("sys").stderr)
+            continue
+            
         original_num_samp = data.shape[0]
         data = resample_data(data, DEFAULT_RESAMPLE_SAMPLES)
 
         num_samp, num_trac = data.shape
         # Keep total time window from original dt and original sample count.
         time_window_ns = original_num_samp * dt_s * 1e9
-        samp_int_ns = time_window_ns / num_samp
+        samp_int_ns = time_window_ns / (num_samp - 1) if num_samp > 1 else time_window_ns
         samp_freq_mhz = (1.0 / samp_int_ns) * 1e3
         data_i16 = scale_to_int16(data)
 
@@ -378,7 +418,6 @@ def main() -> None:
             "antenna": f"gprMax {DEFAULT_CENTRE_FREQ_MHZ}MHz",
         }
 
-        fmt = args.fmt.lower()
         if fmt == "rd3":
             write_rd3_rad(base, data_i16, hdr)
         elif fmt == "dzt":
