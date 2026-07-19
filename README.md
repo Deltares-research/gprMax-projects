@@ -1,81 +1,147 @@
 # gprMax-projects
 
-`gprMax-projects` is a dedicated repository for managing gprMax modelling studies without mixing project-specific files into the upstream `gprMax` source tree.
+This repository runs gprMax models with one command and stores outputs in `wheels/outputs`.
 
-## Repository split
+## First-time setup (Windows)
 
-- The upstream `gprMax` source code lives in a separate repository at `../gprMax`
-- This repository contains modelling projects and shared runner scripts
-- Keeping the repositories separate means the upstream `gprMax` checkout stays clean and can be updated with `git pull`
+1. Install Pixi: https://pixi.sh/latest/
+2. Clone this repository.
+3. Clone `gprMax` as a sibling folder named `gprMax`.
 
-## Shared Pixi environment
+Expected folder layout:
 
-All projects in this repository use a single Pixi environment defined in the repository root `pyproject.toml`.
-The Pixi configuration is embedded directly in `pyproject.toml`; there is no separate `pixi.toml` file.
+```text
+<parent folder>/
+  gprMax/
+  gprMax-projects/
+```
 
-The workspace is configured for:
+The Pixi environment in this repository expects `../gprMax` to exist.
 
-- `win-64`
+## First run (guaranteed quick test)
 
-and uses the `conda-forge` channel.
+From the repository root:
 
-## Local editable gprMax dependency
+```powershell
+pixi run wheels
+```
 
-The Pixi environment includes `gprMax` as an editable local PyPI dependency pointing to `../gprMax`.
-That keeps the modelling workspace decoupled from the upstream source checkout while still allowing local development against the sibling repository.
+This runs the default starter config:
 
-## Projects
+- `wheels/models/start_test_1ascan.toml`
 
-The first modelling project in this repository is `wheels`.
-It includes folders for models, generated geometries, scripts, outputs, and figures.
+You should see a successful summary ending with:
 
-## Pixi tasks
+- `Passed: 1/1`
 
-Common tasks are defined in `pyproject.toml`:
+## Main run configs
 
-- `pixi run wheels` - run batch chain defined in `wheels/models/run_config.toml`
-- `pixi run convert -- any/path/to/file.out --format dt1` - export Ex/Ey/Ez to DT1/HD
-- `pixi run plot -- any/path/to/file.out Ez` - plot B-scan for a field component (`Ex`, `Ey`, `Ez`, `Hx`, `Hy`, `Hz`)
+- `wheels/models/start_test_1ascan.toml` - fastest sanity check (default)
+- `wheels/models/3models_197ascans.toml` - 3-material scenario, 197 A-scans
+- `wheels/models/material_sweep_1ascan.toml` - full material sweep, 1 A-scan each
 
-Notes:
+Run a specific config:
 
-- Keep `--` after task names when passing arguments.
-- For plotting, use a field component (for example `Ez`), not `--format dt1`.
+```powershell
+pixi run wheels -- --config wheels/models/3models_197ascans.toml
+pixi run wheels -- --config wheels/models/material_sweep_1ascan.toml
+```
 
-## GPU Acceleration (Optional)
+## Where results are written
 
-To accelerate simulations with NVIDIA GPU:
+Final `.out` files are moved to:
 
-1. **Install CUDA Toolkit** — Download from [NVIDIA CUDA Toolkit](https://developer.nvidia.com/cuda-downloads)
-   - Select your OS and architecture
-   - During installation, select only: CUDA Toolkit + NVIDIA Drivers
-   - Note the installation path (default: `C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\vXX.X`)
+- `wheels/outputs`
 
-2. **Set CUDA_PATH environment variable** (Windows)
-   - System Properties → Environment Variables
-   - Add new variable: `CUDA_PATH = C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\vXX.X`
-   - Restart your terminal/IDE
+Names follow this pattern:
 
-3. **Run with GPU** — Set `gpu = true` in `wheels/models/run_config.toml`, then run:
-   ```powershell
-   pixi run wheels
-   ```
+- `<output_prefix>__mNNN__aASCANS.out`
 
-GPU acceleration can significantly reduce runtime depending on model size and hardware.
+Example:
 
-## Field Components Explained
+- `start_test_1ascan__m001__a1.out`
 
-GPRMax outputs six electromagnetic field components:
+If a file with the same name already exists, a suffix is added automatically (`_001`, `_002`, ...).
 
-**Electric Field (E-field):**
-- `Ex`, `Ey`, `Ez` — Electric field in x, y, z directions (units: V/m)
+## Plot a result
 
-**Magnetic Field (H-field):**
-- `Hx`, `Hy`, `Hz` — Magnetic field in x, y, z directions (units: A/m)
+Plot any output file and choose a field component (`Ex`, `Ey`, `Ez`, `Hx`, `Hy`, `Hz`):
 
-**For a vertical Hertzian dipole** (z-polarized, as in your models):
-- **Ez is strong** — The dipole orientation directly radiates in the z-direction
-- **Hy is strong** — Magnetic field perpendicular to the electric dipole, follows right-hand rule
-- Ex, Ey, Hx, Hz are typically much weaker
+```powershell
+pixi run plot -- wheels/outputs/start_test_1ascan__m001__a1.out Ez
+```
 
-This is standard electromagnetic theory: a vertical antenna primarily radiates vertical electric field with orthogonal magnetic field. Your models correctly show **Ez and Hy** as the dominant components, which is expected behavior.
+Plot the newest output automatically:
+
+```powershell
+$latest = Get-ChildItem wheels/outputs/*.out | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+pixi run plot -- $latest.FullName Ez
+```
+
+## Convert a result (DT1/RD3/DZT/IPRB)
+
+```powershell
+pixi run convert -- wheels/outputs/start_test_1ascan__m001__a1.out --format dt1
+```
+
+Supported formats:
+
+- `dt1`
+- `rd3`
+- `dzt`
+- `iprb`
+
+## GPU usage (optional)
+
+GPU runs use NVIDIA CUDA through gprMax.
+
+### CUDA requirements
+
+1. NVIDIA GPU with CUDA support.
+2. Recent NVIDIA driver installed.
+3. CUDA Toolkit installed (from https://developer.nvidia.com/cuda-downloads).
+
+Recommended Windows install path:
+
+- `C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\vXX.X`
+
+If needed, set the environment variable:
+
+- `CUDA_PATH=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\vXX.X`
+
+Restart terminal/VS Code after driver/toolkit changes.
+
+### Enable GPU in a run config
+
+Set `gpu = true` in the TOML you want to run, then run normally:
+
+```powershell
+pixi run wheels
+```
+
+or
+
+```powershell
+pixi run wheels -- --config wheels/models/3models_197ascans.toml
+```
+
+### Confirm GPU is actually used
+
+In terminal output, look for lines like:
+
+- `GPU(s) detected: ...`
+- `GPU solving using: ...`
+
+If those lines are missing, the run used CPU.
+
+### Common GPU issues
+
+1. `TOMLDecodeError` after editing config:
+  - Use lowercase booleans only: `true` / `false`.
+2. CUDA not detected:
+  - Reinstall/update NVIDIA driver.
+  - Verify CUDA Toolkit installation.
+  - Reopen terminal/VS Code.
+3. GPU run slower than expected:
+  - Very small models may not benefit from GPU.
+  - Test with larger A-scan counts.

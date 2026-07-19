@@ -1,5 +1,6 @@
 import argparse
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -30,6 +31,12 @@ def unique_destination(path: Path) -> Path:
         i += 1
 
 
+def sanitize_name(value: str) -> str:
+    cleaned = re.sub(r"[^A-Za-z0-9._-]+", "-", value.strip())
+    cleaned = cleaned.strip("-._")
+    return cleaned or "run"
+
+
 def load_run_config(path: Path) -> dict:
     if not path.exists():
         die(f"Run config not found: {path}")
@@ -38,6 +45,62 @@ def load_run_config(path: Path) -> dict:
     if not isinstance(data, dict):
         die(f"Invalid run config format: {path}")
     return data
+
+
+def resolve_template_path(template_value: str, repo_root: Path, config_path: Path) -> Path:
+    t = Path(template_value)
+    candidates = [t] if t.is_absolute() else [repo_root / t, config_path.parent / t]
+    for c in candidates:
+        if c.exists():
+            return c
+    die(f"Template not found: {template_value}")
+
+
+def render_template(template: str, row: dict[str, str], settings: dict) -> str:
+    mat_file = row["material_file"].strip()
+    freq_mhz = float(settings.get("freq_mhz", 100.0))
+    # gprMax expects Hz, keep output readable as e6 from MHz input.
+    freq_hz_expr = f"{freq_mhz:g}e6"
+
+    # Preferred user-facing unit in TOML is ns; fallback supports legacy seconds key.
+    if "time_window_ns" in settings:
+        time_window_ns = float(settings["time_window_ns"])
+    else:
+        time_window_ns = float(settings.get("time_window", 3.0e-7)) * 1e9
+    time_window_s_expr = f"{time_window_ns:g}e-9"
+
+    geometry_view_enabled = bool(settings.get("geometry_view", False))
+    geometry_view_mode = str(settings.get("geometry_view_mode", "n")).lower().strip()
+    if geometry_view_mode not in {"n", "f"}:
+        die("geometry_view_mode must be either 'n' or 'f'")
+    geometry_view_line = (
+        f"geometry_view: 0 0 0 50 6.0 0.01 0.01 0.01 geom {geometry_view_mode}"
+        if geometry_view_enabled
+        else "geometry_view disabled"
+    )
+
+    values: dict[str, str] = {
+        "GEOMETRY_FILE": row["geometry_file"].strip(),
+        "MATERIAL_FILE": mat_file,
+        "MATERIAL_BASE": Path(mat_file).stem,
+        "FREQ_MHZ": f"{freq_mhz:g}",
+        "FREQ_HZ": freq_hz_expr,
+        "TIME_WINDOW_S": time_window_s_expr,
+        "X_SRC": str(settings.get("x_src", 1.0)),
+        "Y_SRC": str(settings.get("y_src", 1.0)),
+        "Z_SRC": str(settings.get("z_src", 0.0)),
+        "RX_OFFSET": str(settings.get("rx_offset", 1.0)),
+        "STEP": str(settings.get("step", 1.0)),
+        "WAVE_FIELD": "True" if bool(settings.get("wave_field", False)) else "False",
+        "DT_SNAP_NS": str(settings.get("dt_snap_ns", 2)),
+        "SNAPSHOT_COUNT": str(settings.get("snapshot_count", 24)),
+        "GEOMETRY_VIEW_LINE": geometry_view_line,
+    }
+
+    content = template
+    for k, v in values.items():
+        content = content.replace(f"{{{k}}}", v)
+    return content
 
 
 def load_rows_from_toml(settings: dict) -> list[dict[str, str]]:
@@ -93,7 +156,7 @@ def load_rows_from_toml(settings: dict) -> list[dict[str, str]]:
     return rows
 
 
-def run_batch(input_file: Path, runs: int, gpu: bool) -> int:
+def run_batch(input_file: Path, runs: int, gpu: bool, output_basename: str) -> int:
     stem = input_file.with_suffix("")
     outputs = input_file.parent.parent / "outputs"
     outputs.mkdir(parents=True, exist_ok=True)
@@ -151,7 +214,8 @@ def run_batch(input_file: Path, runs: int, gpu: bool) -> int:
 
     merged = stem.parent / f"{stem.name}_merged.out"
     if merged.exists():
-        shutil.move(str(merged), str(unique_destination(outputs / merged.name)))
+        target = unique_destination(outputs / f"{output_basename}.out")
+        shutil.move(str(merged), str(target))
 
     for leftover in stem.parent.glob(f"{stem.name}*.out"):
         if leftover.exists() and not leftover.name.endswith("_merged.out"):
@@ -162,19 +226,25 @@ def run_batch(input_file: Path, runs: int, gpu: bool) -> int:
 
 def main() -> None:
     p = argparse.ArgumentParser(description="Run sequential gprMax model chain")
-    p.add_argument("--run-config", default="wheels/models/run_config.toml")
+    p.add_argument(
+        "--config",
+        "--run-config",
+        dest="config",
+        default="wheels/models/start_test_1ascan.toml",
+        help="Path to run config TOML (alias: --run-config)",
+    )
     p.add_argument("--gpu", action="store_true")
     args = p.parse_args()
 
-    settings = load_run_config(Path(args.run_config))
+    run_config_path = Path(args.config)
+    settings = load_run_config(run_config_path)
+    run_name = sanitize_name(str(settings.get("output_prefix", run_config_path.stem)))
 
     gpu_enabled = args.gpu or bool(settings.get("gpu", False))
 
     repo = Path(__file__).resolve().parent.parent
-    template_value = settings.get("template", "wheels/models/wheels-chain.in")
-    template_path = repo / template_value
-    if not template_path.exists():
-        die(f"Template not found: {template_path}")
+    template_value = settings.get("template", "wheels/models/wheels.in")
+    template_path = resolve_template_path(str(template_value), repo, run_config_path)
 
     template = template_path.read_text(encoding="utf-8")
 
@@ -186,22 +256,19 @@ def main() -> None:
     start_time = time.time()
 
     for i, row in enumerate(rows, 1):
-        geom_file = row["geometry_file"].strip()
-        mat_file = row["material_file"].strip()
         ascans = row["ascans"].strip()
-        mat_base = Path(mat_file).stem
+        mat_file = row["material_file"].strip()
+        out_base = sanitize_name(f"{run_name}__m{i:03d}__a{ascans}")
 
-        content = template.replace("{GEOMETRY_FILE}", geom_file)
-        content = content.replace("{MATERIAL_FILE}", mat_file)
-        content = content.replace("{MATERIAL_BASE}", mat_base)
+        content = render_template(template, row, settings)
 
-        temp_in = repo / "wheels" / "models" / f"_chain_temp_{i:03d}_.in"
+        temp_in = repo / "wheels" / "models" / f"_{out_base}_.in"
         temp_in.write_text(content, encoding="utf-8")
 
         print(f"[{i}/{len(rows)}] Running: {mat_file} ({ascans} A-scans)")
         print(f"      Input: {temp_in.name}")
 
-        exit_code = run_batch(temp_in, int(ascans), gpu_enabled)
+        exit_code = run_batch(temp_in, int(ascans), gpu_enabled, out_base)
         if exit_code == 0:
             status = "OK"
             results.append((mat_file, "OK"))

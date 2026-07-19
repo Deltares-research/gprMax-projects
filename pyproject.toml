@@ -37,7 +37,7 @@ terminaltables = "*"
 setuptools = "*"  # Ensure setuptools is available for building
 
 [tool.pixi.tasks]
-wheels = { cmd = "python scripts/gpr_chain.py --run-config wheels/models/run_config.toml" }
+wheels = { cmd = "python scripts/gpr_chain.py --config wheels/models/start_test_1ascan.toml" }
 convert = { cmd = "python scripts/outputfile_converter.py" }
 plot = { cmd = "python -m tools.plot_Bscan" }
 

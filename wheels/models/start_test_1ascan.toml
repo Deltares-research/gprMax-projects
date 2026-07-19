@@ -1,0 +1,41 @@
+# Chain run settings for scripts/gpr_chain.py
+# Usage: pixi run wheels -- --config wheels/models/start_test_1ascan.toml
+
+# Path to the chain input template (repo-relative or relative to this file).
+template = "wheels/models/wheels.in"
+
+# Enable GPU mode for the chain run (default: false). If true, the chain run will be executed on a GPU (if available).
+# Beware: lower case boolean values are required for TOML, e.g. "true" or "false", not "True" or "False".
+gpu = false
+ascans = 1
+
+# Prefix for generated outfiles.
+output_prefix = "start_test_1ascan"
+
+# Acquisition/model knobs moved from template defaults.
+freq_mhz = 100.0
+time_window_ns = 30.0
+x_src = 110.0
+y_src = 1.0
+z_src = 0.0
+rx_offset = 1.0
+step = 1.0
+
+wave_field = true
+dt_snap_ns = 2
+snapshot_count = 24
+
+# Output geometry view (HDF5) of the modelled geometry.
+geometry_view = false
+
+# Optional when geometry_view = true: "n" (normal) or "f" (fine)
+geometry_view_mode = "n"
+
+# Modelling geometry 
+geometry_file = "../geometries/wheels_watertable_geometry.h5"
+
+# Parameter files for the material sweep. These are expected to be in the same directory as this run config file.
+material_dir = "../materials"
+material_files = [
+  "material_best_estimate.txt",
+]

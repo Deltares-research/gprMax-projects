@@ -1,0 +1,6 @@
+id,material,description,eps_low,eps_centre,eps_high,eps_best,sigma_low_S_per_m,sigma_centre_S_per_m,sigma_high_S_per_m,sigma_best_S_per_m
+0,zand_fijn_sterk_siltig_unsaturated,"upper sand, unsaturated to variably saturated; no dune-sand end-member assumed",8,12,18,12,0.001,0.005,0.02,0.01
+1,zand_fijn_sterk_siltig_saturated,"lower sand, fully saturated, fine and strongly silty",18,25,32,25,0.03,0.08,0.15,0.08
+2,klei_zwak_tot_sterk_zandig,"sandy clay, assumed saturated",20,30,40,30,0.05,0.15,0.35,0.15
+3,veen_plaatselijk_kleiig,"locally clayey peat, assumed saturated",50,65,80,65,0.05,0.15,0.35,0.15
+4,klei_zwak_tot_sterk_zandig_en_siltig,"sandy and silty clay, assumed saturated",24,35,45,35,0.08,0.25,0.6,0.25

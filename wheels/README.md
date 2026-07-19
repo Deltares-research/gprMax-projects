@@ -1,56 +1,83 @@
-# Wheels gprMax project
+# Wheels project
 
-This folder contains the first `gprmax-projects` model setup for the Dutch `wielen` / levee-breach geometry.
+This folder contains model inputs, material parameter files, geometry, and outputs for the wheels gprMax runs.
 
-## Folder roles
+## Folder overview
 
-- `models/` contains the gprMax `.in` templates and run config files.
-- `materials/` contains material definition files and material index tables.
-- `geometries/` contains generated HDF5 geometry and material-ID mapping files.
-- `scripts/` contains Python scripts used to regenerate geometry or process results.
-- `data/` contains source interpretation inputs, such as the traced PNG.
-- `outputs/` is for gprMax outputs from `pixi run wheels ...` and is ignored by Git.
-- `figures/` contains previews and figures for checking/reporting.
+- `models/` run configs (`.toml`) and the shared input template (`wheels.in`)
+- `materials/` material definition files used by runs
+- `geometries/` geometry HDF5 files
+- `outputs/` generated `.out` files
+- `scripts/` helper scripts for geometry and data tasks
 
-## Current generated files
+## First successful run
 
-- `models/wheels-chain.in`
-- `materials/materials.txt`
-- `geometries/wheel_geometry.h5`
-- `geometries/wheel_material_id_mapping.csv`
-- `figures/wheel_geometry_preview.png`
-- `data/traced_section_boundaries_flat_surface_v2.png`
+From the repository root:
 
-The values in `materials/materials.txt` are placeholders. Edit the electromagnetic properties before running a scientific simulation.
+```powershell
+pixi run wheels
+```
 
-## Runs
+Default run config:
 
-- `pixi run wheels`
+- `wheels/models/start_test_1ascan.toml`
 
-## View outputs
+This is a quick sanity run designed to finish fast.
 
-- Plot merged B-scan: `pixi run python -m tools.plot_Bscan wheels/outputs/wheels_merged.out Ez`
-- Change component as needed: `Ex`, `Ey`, `Ez`, `Hx`, `Hy`, `Hz`
+## Available run configs
 
-## DT1 export
+- `wheels/models/start_test_1ascan.toml`
+- `wheels/models/3models_197ascans.toml`
+- `wheels/models/material_sweep_1ascan.toml`
 
-- Python converter script: `scripts/outputfile_converter.py`
-- Pixi task entrypoint: `pixi run convert -- ...`
+Run a specific config:
 
-Examples:
+```powershell
+pixi run wheels -- --config wheels/models/3models_197ascans.toml
+pixi run wheels -- --config wheels/models/material_sweep_1ascan.toml
+```
 
-- DT1: `pixi run convert -- wheels/outputs/wheels_merged.out --format dt1`
-- RD3: `pixi run convert -- wheels/outputs/wheels_merged.out --format rd3`
-- DZT: `pixi run convert -- wheels/outputs/wheels_merged.out --format dzt`
-- IPRB: `pixi run convert -- wheels/outputs/wheels_merged.out --format iprb`
+## Output files
 
-Pixi argument separator:
+Outputs are written to `wheels/outputs`.
 
-- Keep `--` after `pixi run convert` so arguments are passed to the converter script (not parsed by Pixi).
+Filename pattern:
 
-Notes:
+- `<output_prefix>__mNNN__aASCANS.out`
 
-- The converter always exports all three components: `Ex`, `Ey`, `Ez`.
-- Default behavior mirrors MATLAB script: transpose receiver matrix, resample to 1024 samples, then scale to 16-bit.
-- Output names include component suffix, e.g. `wheels_merged_ex.dt1`, `wheels_merged_ey.dt1`, `wheels_merged_ez.dt1`.
-- Fixed metadata defaults in script: centre frequency `250 MHz`, antenna separation `0.5 m`, trace interval `0.1 m`.
+## Plot
+
+```powershell
+pixi run plot -- wheels/outputs/start_test_1ascan__m001__a1.out Ez
+```
+
+Valid components: `Ex`, `Ey`, `Ez`, `Hx`, `Hy`, `Hz`.
+
+## Convert
+
+```powershell
+pixi run convert -- wheels/outputs/start_test_1ascan__m001__a1.out --format dt1
+```
+
+Formats: `dt1`, `rd3`, `dzt`, `iprb`.
+
+## GPU (CUDA)
+
+To run on NVIDIA GPU:
+
+1. Install NVIDIA driver.
+2. Install CUDA Toolkit (https://developer.nvidia.com/cuda-downloads).
+3. Set `gpu = true` in the run TOML.
+
+Then run:
+
+```powershell
+pixi run wheels
+```
+
+Check terminal output for:
+
+- `GPU(s) detected: ...`
+- `GPU solving using: ...`
+
+If these lines do not appear, the run is on CPU.

@@ -1,0 +1,21 @@
+Split-sand material sweep 024
+Design: 2^5 low/high edge-case factorial sweep
+Case label: high_low_high_high_high
+Order is fixed by HDF5 /data integer IDs: 0, 1, 2, 3, 4.
+Format: #material: epsilon_r sigma_S_per_m mu_r magnetic_loss material_name
+Non-# lines are comments and ignored by gprMax.
+
+ID 0: zand_fijn_sterk_siltig_unsaturated -- upper sand, unsaturated to variably saturated; no dune-sand end-member assumed
+#material: 18 0.02 1 0 zand_fijn_sterk_siltig_unsaturated
+
+ID 1: zand_fijn_sterk_siltig_saturated -- lower sand, fully saturated, fine and strongly silty
+#material: 18 0.03 1 0 zand_fijn_sterk_siltig_saturated
+
+ID 2: klei_zwak_tot_sterk_zandig -- sandy clay, assumed saturated
+#material: 40 0.35 1 0 klei_zwak_tot_sterk_zandig
+
+ID 3: veen_plaatselijk_kleiig -- locally clayey peat, assumed saturated
+#material: 80 0.35 1 0 veen_plaatselijk_kleiig
+
+ID 4: klei_zwak_tot_sterk_zandig_en_siltig -- sandy and silty clay, assumed saturated
+#material: 45 0.6 1 0 klei_zwak_tot_sterk_zandig_en_siltig

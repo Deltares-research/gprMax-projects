@@ -358,25 +358,83 @@ def write_iprb_iprh(base: Path, data_i16: np.ndarray, hdr: dict[str, float | int
 def get_available_components(input_file: Path) -> list[str]:
     """Discover which field components are available in the HDF5 file."""
     available = []
-    try:
-        with h5py.File(input_file, "r") as f:
-            if "/rxs/rx1" in f:
-                rx1_group = f["/rxs/rx1"]
-                for component in ("Ex", "Ey", "Ez", "Hx", "Hy", "Hz"):
-                    if component in rx1_group:
-                        available.append(component)
-    except Exception:
-        pass
+    with h5py.File(input_file, "r") as f:
+        if "/rxs/rx1" in f:
+            rx1_group = f["/rxs/rx1"]
+            for component in ("Ex", "Ey", "Ez", "Hx", "Hy", "Hz"):
+                if component in rx1_group:
+                    available.append(component)
     return available
+
+
+def resolve_input_file(input_file: Path) -> Path:
+    """Resolve input file from common invocation styles.
+
+    Supports:
+    - absolute paths
+    - paths relative to current process cwd
+    - paths relative to repo root
+    - shorthand like .\file.out by locating unique match under wheels/outputs
+    """
+    raw = input_file.expanduser()
+    repo_root = Path(__file__).resolve().parent.parent
+
+    candidates: list[Path] = []
+    if raw.is_absolute():
+        candidates.append(raw)
+    else:
+        candidates.append(Path.cwd() / raw)
+        candidates.append(repo_root / raw)
+
+        outputs_root = repo_root / "wheels" / "outputs"
+        if outputs_root.exists():
+            matches = [p for p in outputs_root.rglob(raw.name) if p.is_file()]
+            if len(matches) == 1:
+                candidates.append(matches[0])
+            elif len(matches) > 1:
+                found = [str(p.relative_to(repo_root)) for p in matches[:8]]
+                tail = "" if len(matches) <= 8 else f"\n  ... and {len(matches) - 8} more"
+                raise ValueError(
+                    "Input filename is ambiguous under wheels/outputs. "
+                    "Use a longer relative path from repo root.\n  "
+                    + "\n  ".join(found)
+                    + tail
+                )
+
+    seen: set[str] = set()
+    for candidate in candidates:
+        key = str(candidate)
+        if key in seen:
+            continue
+        seen.add(key)
+        if candidate.exists():
+            return candidate.resolve()
+
+    tried = "\n  ".join(str(p) for p in candidates)
+    raise FileNotFoundError(f"Input file not found: {input_file}\nTried:\n  {tried}")
 
 
 def main() -> None:
     args = parse_args()
+    try:
+        input_file = resolve_input_file(args.input_file)
+    except (FileNotFoundError, ValueError) as e:
+        print(f"Error: {e} (cwd: {Path.cwd()})", file=__import__("sys").stderr)
+        return
 
     # Discover available components
-    available_components = get_available_components(args.input_file)
+    try:
+        available_components = get_available_components(input_file)
+    except OSError as e:
+        print(f"Error: Could not open input file {input_file}: {e}", file=__import__("sys").stderr)
+        return
+
     if not available_components:
-        print("Error: No field components found in file", file=__import__("sys").stderr)
+        print(
+            f"Error: No field components found in file {input_file}. "
+            "Expected datasets under /rxs/rx1, e.g. Ex/Ey/Ez.",
+            file=__import__("sys").stderr,
+        )
         return
 
     fmt = args.fmt.lower()
@@ -385,7 +443,7 @@ def main() -> None:
         try:
             # DT1 format needs original orientation (n_samples, n_traces), others need transpose
             transpose = (fmt != "dt1")
-            data, dt_s = read_data(args.input_file, component, transpose=transpose)
+            data, dt_s = read_data(input_file, component, transpose=transpose)
         except ValueError as e:
             print(f"Error: {e}", file=__import__("sys").stderr)
             return
@@ -403,8 +461,8 @@ def main() -> None:
         samp_freq_mhz = (1.0 / samp_int_ns) * 1e3
         data_i16 = scale_to_int16(data)
 
-        base = args.input_file.with_suffix("").with_name(
-            f"{args.input_file.with_suffix('').name}_{component.lower()}"
+        base = input_file.with_suffix("").with_name(
+            f"{input_file.with_suffix('').name}_{component.lower()}"
         )
         hdr = {
             "num_samp": num_samp,
