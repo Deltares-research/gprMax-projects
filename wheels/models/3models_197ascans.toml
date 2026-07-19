@@ -4,7 +4,8 @@
 # Path to the chain input template (repo-relative or relative to this file).
 template = "wheels/models/wheels.in"
 
-# Enable GPU mode for the chain run.
+# Enable GPU mode for the chain run (default: false). If true, the chain run will be executed on a GPU (if available).
+# Beware: lower case boolean values are required for TOML, e.g. "true" or "false", not "True" or "False".
 gpu = true
 ascans = 197
 
@@ -36,10 +37,13 @@ geometry_file = "../geometries/wheels_watertable_geometry.h5"
 # Parameter files for the material sweep. These are expected to be in the same directory as this run config file.
 material_dir = "../materials"
 material_files = [
-	"split_sand_material_014.txt",
-	"split_sand_material_013.txt",
-	"split_sand_material_015.txt",
+  "split_sand_material_014.txt",
+  "split_sand_material_013.txt",
+  "split_sand_material_015.txt",
 ]
+
+
+
 
 
 

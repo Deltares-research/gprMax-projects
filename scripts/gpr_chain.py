@@ -56,7 +56,12 @@ def resolve_template_path(template_value: str, repo_root: Path, config_path: Pat
     die(f"Template not found: {template_value}")
 
 
-def render_template(template: str, row: dict[str, str], settings: dict) -> str:
+def render_template(
+    template: str,
+    row: dict[str, str],
+    settings: dict,
+    geometry_view_basename: str,
+) -> str:
     mat_file = row["material_file"].strip()
     freq_mhz = float(settings.get("freq_mhz", 100.0))
     # gprMax expects Hz, keep output readable as e6 from MHz input.
@@ -73,11 +78,7 @@ def render_template(template: str, row: dict[str, str], settings: dict) -> str:
     geometry_view_mode = str(settings.get("geometry_view_mode", "n")).lower().strip()
     if geometry_view_mode not in {"n", "f"}:
         die("geometry_view_mode must be either 'n' or 'f'")
-    geometry_view_line = (
-        f"geometry_view: 0 0 0 50 6.0 0.01 0.01 0.01 geom {geometry_view_mode}"
-        if geometry_view_enabled
-        else "geometry_view disabled"
-    )
+    geometry_view_prefix = "#" if geometry_view_enabled else "##"
 
     values: dict[str, str] = {
         "GEOMETRY_FILE": row["geometry_file"].strip(),
@@ -94,7 +95,9 @@ def render_template(template: str, row: dict[str, str], settings: dict) -> str:
         "WAVE_FIELD": "True" if bool(settings.get("wave_field", False)) else "False",
         "DT_SNAP_NS": str(settings.get("dt_snap_ns", 2)),
         "SNAPSHOT_COUNT": str(settings.get("snapshot_count", 24)),
-        "GEOMETRY_VIEW_LINE": geometry_view_line,
+        "GEOMETRY_VIEW_PREFIX": geometry_view_prefix,
+        "GEOMETRY_VIEW_MODE": geometry_view_mode,
+        "GEOMETRY_VIEW_BASENAME": geometry_view_basename,
     }
 
     content = template
@@ -260,7 +263,7 @@ def main() -> None:
         mat_file = row["material_file"].strip()
         out_base = sanitize_name(f"{run_name}__m{i:03d}__a{ascans}")
 
-        content = render_template(template, row, settings)
+        content = render_template(template, row, settings, out_base)
 
         temp_in = repo / "wheels" / "models" / f"_{out_base}_.in"
         temp_in.write_text(content, encoding="utf-8")
