@@ -1,4 +1,5 @@
 import argparse
+import contextlib
 import os
 import re
 import shutil
@@ -9,6 +10,7 @@ import tomllib
 from pathlib import Path
 
 import psutil
+import h5py
 
 
 def run(cmd: list[str], env: dict | None = None) -> int:
@@ -29,6 +31,19 @@ def unique_destination(path: Path) -> Path:
         if not candidate.exists():
             return candidate
         i += 1
+
+
+def destination_for_output(path: Path) -> Path:
+    if not path.exists():
+        return path
+
+    with contextlib.suppress(OSError, KeyError, ValueError):
+        with h5py.File(path, "r") as f:
+            if "nrx" in f.attrs:
+                return unique_destination(path)
+
+    path.unlink(missing_ok=True)
+    return path
 
 
 def sanitize_name(value: str) -> str:
@@ -87,6 +102,12 @@ def render_template(
         "FREQ_MHZ": f"{freq_mhz:g}",
         "FREQ_HZ": freq_hz_expr,
         "TIME_WINDOW_S": time_window_s_expr,
+        "DOMAIN_X": str(settings.get("domain_x", 200.0)),
+        "DOMAIN_Y": str(settings.get("domain_y", 11.0)),
+        "DX": str(settings.get("dx", 0.02)),
+        "DY": str(settings.get("dy", 0.02)),
+        "DZ": str(settings.get("dz", 0.02)),
+        "WAVEFORM": str(settings.get("waveform", "ricker")),
         "X_SRC": str(settings.get("x_src", 1.0)),
         "Y_SRC": str(settings.get("y_src", 1.0)),
         "Z_SRC": str(settings.get("z_src", 0.0)),
@@ -96,6 +117,7 @@ def render_template(
         "DT_SNAP_NS": str(settings.get("dt_snap_ns", 2)),
         "SNAPSHOT_COUNT": str(settings.get("snapshot_count", 24)),
         "GEOMETRY_VIEW_PREFIX": geometry_view_prefix,
+        "GEOMETRY_VIEW_ENABLED": "True" if geometry_view_enabled else "False",
         "GEOMETRY_VIEW_MODE": geometry_view_mode,
         "GEOMETRY_VIEW_BASENAME": geometry_view_basename,
     }
@@ -212,13 +234,19 @@ def run_batch(input_file: Path, runs: int, gpu: bool, output_basename: str) -> i
         if code != 0:
             return code
 
-    if run([sys.executable, "-m", "tools.outputfiles_merge", str(stem), "--remove-files"], env=env) != 0:
-        return 1
+    if runs > 1:
+        if run([sys.executable, "-m", "tools.outputfiles_merge", str(stem), "--remove-files"], env=env) != 0:
+            return 1
 
-    merged = stem.parent / f"{stem.name}_merged.out"
-    if merged.exists():
-        target = unique_destination(outputs / f"{output_basename}.out")
-        shutil.move(str(merged), str(target))
+        merged = stem.parent / f"{stem.name}_merged.out"
+        if merged.exists():
+            target = destination_for_output(outputs / f"{output_basename}.out")
+            shutil.move(str(merged), str(target))
+    else:
+        single = stem.with_suffix(".out")
+        if single.exists():
+            target = destination_for_output(outputs / f"{output_basename}.out")
+            shutil.move(str(single), str(target))
 
     for leftover in stem.parent.glob(f"{stem.name}*.out"):
         if leftover.exists() and not leftover.name.endswith("_merged.out"):
@@ -263,7 +291,7 @@ def main() -> None:
         mat_file = row["material_file"].strip()
         out_base = sanitize_name(f"{run_name}__m{i:03d}__a{ascans}")
 
-        content = render_template(template, row, settings, out_base)
+        content = render_template(template, row, settings, f"{out_base}_geometry")
 
         temp_in = repo / "wheels" / "models" / f"_{out_base}_.in"
         temp_in.write_text(content, encoding="utf-8")

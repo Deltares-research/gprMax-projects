@@ -2,6 +2,12 @@
 
 This folder contains model inputs, material parameter files, geometry, and outputs for the wheels gprMax runs.
 
+## Acknowledgement
+
+This workflow uses gprMax; many thanks to the gprMax contributors.
+If you publish results, please cite: Warren, C., Giannopoulos, A., & Giannakis, I. (2016), *Computer Physics Communications*, https://doi.org/10.1016/j.cpc.2016.08.020.
+gprMax is licensed separately under GNU GPL v3+; see `../THIRD_PARTY_NOTICES.md`.
+
 ## Folder overview
 
 - `models/` run configs (`.toml`) and the shared input template (`wheels.in`)
@@ -14,7 +20,7 @@ This folder contains model inputs, material parameter files, geometry, and outpu
 
 From the repository root:
 
-```powershell
+```
 pixi run wheels
 ```
 
@@ -32,7 +38,7 @@ This is a quick sanity run designed to finish fast.
 
 Run a specific config:
 
-```powershell
+```
 pixi run wheels -- --config wheels/models/3models_197ascans.toml
 pixi run wheels -- --config wheels/models/material_sweep_1ascan.toml
 ```
@@ -47,15 +53,33 @@ Filename pattern:
 
 ## Plot
 
-```powershell
+```
 pixi run plot -- wheels/outputs/start_test_1ascan__m001__a1.out Ez
 ```
 
 Valid components: `Ex`, `Ey`, `Ez`, `Hx`, `Hy`, `Hz`.
 
+## Plot a single trace
+
+```
+pixi run plot-trace -- wheels/outputs/start_test_1ascan__m001__a1.out Ez --search-start-ns 200 --search-span-ns 100 --reflection-window-ns 65 --direct-end-ns 65 --normalize-processed
+```
+
+This plots the raw trace and its AGC version on one figure with twin y-axes, adds red direct/reflection boxes, and saves a Markdown metric report. The reflection window is centered on the first prominent envelope peak found within the bounded search interval. Use `--trace-index` for merged outputs with multiple A-scans.
+
+For multiple single-trace outputs at once:
+
+```
+pixi run plot-trace -- --batch "wheels/outputs/*.out" Ez --search-start-ns 200 --search-span-ns 100 --reflection-window-ns 65 --direct-end-ns 65
+```
+
+This saves one `600 dpi` PNG QC plot per `.out` file and a combined Markdown summary in the outputs folder.
+
+Keep only relevant `.out` files in this folder when running batch mode; move completed sets into subfolders as needed.
+
 ## Convert
 
-```powershell
+```
 pixi run convert -- wheels/outputs/start_test_1ascan__m001__a1.out --format dt1
 ```
 
@@ -71,7 +95,7 @@ To run on NVIDIA GPU:
 
 Then run:
 
-```powershell
+```
 pixi run wheels
 ```
 

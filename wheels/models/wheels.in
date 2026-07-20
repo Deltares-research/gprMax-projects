@@ -1,12 +1,12 @@
 #title: wheels_{MATERIAL_BASE}
-#dx_dy_dz: 0.02 0.02 0.02
+#dx_dy_dz: {DX} {DY} {DZ}
 #time_window: {TIME_WINDOW_S}
 
-##geometry HDF5 is relative to this input file directory: wheels/models/
 #geometry_objects_read: 0 1.0 0 {GEOMETRY_FILE} {MATERIAL_FILE}
+## y=1.0 offset = ~50 cells free space above source added later (tip: include in h5 file from now on)
 
 ##source parameters
-#waveform: ricker 1 {FREQ_HZ} my_ricker
+#waveform: {WAVEFORM} 1 {FREQ_HZ} my_ricker
 #hertzian_dipole: z {X_SRC} {Y_SRC} {Z_SRC} my_ricker
 
 #python:
@@ -17,7 +17,7 @@ x_src, y_src, z_src = {X_SRC}, {Y_SRC}, {Z_SRC}
 rx_offset = {RX_OFFSET}
 step = {STEP}
 
-domain(200.0, 11.0, 0.02)
+domain({DOMAIN_X}, {DOMAIN_Y}, {DZ})
 rx(x_src + rx_offset, y_src, z_src)
 src_steps(step, 0, 0)
 rx_steps(step, 0, 0)
@@ -27,9 +27,9 @@ if wave_field:
    dt_snap = {DT_SNAP_NS}  # nanoseconds
 
    for i in range(1, {SNAPSHOT_COUNT} + 1):
-      print('#snapshot: 0 0 0 50 6.0 0.02 0.02 0.02 0.02 {} snapshot{}'.format((i*dt_snap)*1e-9, i))
+      print('#snapshot: 0 0 0 {DOMAIN_X} {DOMAIN_Y} {DZ} {DX} {DY} {DZ} {} snapshot{}'.format((i*dt_snap)*1e-9, i))
+
+if {GEOMETRY_VIEW_ENABLED}:
+   print('#geometry_view: 0 0 0 {DOMAIN_X} {DOMAIN_Y} {DZ} {DX} {DY} {DZ} {GEOMETRY_VIEW_BASENAME} {GEOMETRY_VIEW_MODE}')
 
 #end_python:
-
-##save the geometry to a vtk file
-{GEOMETRY_VIEW_PREFIX}geometry_view: 0 0 0 50 6.0 0.02 0.02 0.02 0.02 {GEOMETRY_VIEW_BASENAME} {GEOMETRY_VIEW_MODE}

@@ -3,6 +3,7 @@ name = "gprmax-projects"
 version = "0.1.0"
 description = "Shared Pixi workspace for gprMax modelling studies"
 readme = "README.md"
+license = "MIT"
 requires-python = ">=3.11,<3.14"
 
 [tool.pixi.workspace]
@@ -40,4 +41,5 @@ setuptools = "*"  # Ensure setuptools is available for building
 wheels = { cmd = "python scripts/gpr_chain.py --config wheels/models/start_test_1ascan.toml" }
 convert = { cmd = "python scripts/outputfile_converter.py" }
 plot = { cmd = "python -m tools.plot_Bscan" }
+plot-trace = { cmd = "python scripts/plot_trace_gain.py" }
 
