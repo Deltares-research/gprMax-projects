@@ -10,13 +10,13 @@ gpu = true
 ascans = 1
 
 # Prefix for generated outfiles.
-output_prefix = "material_sweep_1ascan"
+output_prefix = "material_sweep_1ascan_20"
 
 # Acquisition/model knobs moved from template defaults.
 freq_mhz = 100.0
 time_window_ns = 400.0
 waveform = "ricker"
-x_src = 110.0
+x_src = 20.0
 y_src = 1.0
 z_src = 0.0
 rx_offset = 1.0

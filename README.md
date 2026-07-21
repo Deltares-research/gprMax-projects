@@ -86,6 +86,14 @@ pixi run plot-trace -- wheels/outputs/start_test_1ascan__m001__a1.out Ez --searc
 
 This plots the raw trace in black and the AGC version in blue on a twin-y-axis figure. The script searches within `[search-start-ns, search-start-ns + search-span-ns]` for the first prominent envelope peak, builds a fixed reflection window around it, draws red boxes for the direct and reflection windows, annotates RMS values, and saves a Markdown report with the metric table next to the `.out` file.
 
+Important interpretation limits for reflection-strength reports:
+
+- Treat reported reflection-strength values as screening metrics, not definitive truth.
+- Perform plot-level quality control for every individual trace before accepting any reported metric.
+- The method assumes an isolated reflector in the chosen window.
+- If reflectors are close together, multiple interfaces can fall inside the same calculation window and bias the metric.
+- Example: in the wheels model near 180 m, the water table and the sand-clay interface are close enough that both can contribute within one reflection window.
+
 Batch-process a set of single-trace outputs, save one `600 dpi` PNG per file, and write a combined Markdown summary:
 
 ```

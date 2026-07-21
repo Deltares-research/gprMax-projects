@@ -22,6 +22,11 @@ def parse_args() -> argparse.Namespace:
     )
     p.add_argument("input_file", type=Path, help="Path to merged gprMax .out file")
     p.add_argument("--format", dest="fmt", choices=["rd3", "dzt", "dt1", "iprb"], required=True)
+    p.add_argument(
+        "--component",
+        choices=["Ex", "Ey", "Ez", "Hx", "Hy", "Hz"],
+        help="Optional single field component to export (default: export all available).",
+    )
     return p.parse_args()
 
 
@@ -438,8 +443,20 @@ def main() -> None:
         return
 
     fmt = args.fmt.lower()
-    
-    for component in available_components:
+    components_to_export = available_components
+    if args.component:
+        requested = args.component
+        if requested not in available_components:
+            available_str = ", ".join(available_components)
+            print(
+                f"Error: Requested component {requested} is not available in {input_file}. "
+                f"Available: {available_str}",
+                file=__import__("sys").stderr,
+            )
+            return
+        components_to_export = [requested]
+
+    for component in components_to_export:
         try:
             # DT1 format needs original orientation (n_samples, n_traces), others need transpose
             transpose = (fmt != "dt1")
